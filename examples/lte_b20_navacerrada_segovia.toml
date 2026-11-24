@@ -1,6 +1,11 @@
-# LTE Band 20 (800 MHz) macro cell to a smartphone in a rural area.
+# LTE Band 20 (800 MHz) from a mountain site in the Sierra de Guadarrama
+# (Bola del Mundo, Navacerrada) to a smartphone in Segovia.
 band = "B20"
-distance = 10.0        # km
+tx_lat = 40.7853       # transmitter: Bola del Mundo
+tx_lon = -4.0127       # west longitudes are negative
+rx_lat = 40.9481       # receiver: Plaza Mayor, Segovia
+rx_lon = -4.1253
+
 tx_power = 46.0        # dBm (40 W per sector)
 tx_gain = 17.0         # dBi, sector antenna
 tx_loss = 2.0          # dB, feeder and connectors

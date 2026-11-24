@@ -1,6 +1,11 @@
-# 5G NR n78 (3.5 GHz) urban small cell to a smartphone inside a building.
+# 5G NR n78 (3.5 GHz) from a rooftop site at Torrespaña to a smartphone
+# inside a building at Puerta del Sol, Madrid.
 band = "n78"
-distance = 0.5         # km
+tx_lat = 40.4233       # transmitter: Torrespaña
+tx_lon = -3.6714
+rx_lat = 40.4169       # receiver: Puerta del Sol
+rx_lon = -3.7035
+
 tx_power = 43.0        # dBm (20 W)
 tx_gain = 24.0         # dBi, massive MIMO beamforming gain
 tx_loss = 0.0          # dB, active antenna, no feeder

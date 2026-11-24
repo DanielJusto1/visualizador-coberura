@@ -92,9 +92,11 @@ def test_examples_run(capsys, example):
 
 
 def test_command_line_overrides_config(capsys):
-    config = str(EXAMPLES / "lte_b20_rural.toml")
+    config = str(EXAMPLES / "lte_b20_navacerrada_segovia.toml")
+    # A distance on the command line replaces the coordinates from the file.
     _, out, _ = run(capsys, "link", "--config", config, "--distance", "1000")
     assert "1000.00 km" in out
+    assert "Tx location" not in out
     assert "LINK FAILS" in out
     # A frequency on the command line replaces the band from the file.
     code, out, _ = run(capsys, "link", "--config", config, "--frequency", "1842.5")
@@ -110,7 +112,7 @@ def test_command_line_overrides_config(capsys):
     ("args", "message"),
     [
         (["--distance", "1", "--tx-power", "43", "--sensitivity", "-90"], "missing frequency"),
-        (["--band", "B20", "--tx-power", "43", "--sensitivity", "-90"], "--distance"),
+        (["--band", "B20", "--tx-power", "43", "--sensitivity", "-90"], "missing link length"),
         (["--band", "B20", "--distance", "1", "--sensitivity", "-90"], "--tx-power"),
         (["--band", "B20", "--distance", "1", "--tx-power", "43"], "sensitivity"),
         (
@@ -183,3 +185,54 @@ def test_runs_as_module():
     )
     assert completed.returncode == 0
     assert "n78" in completed.stdout
+
+
+MADRID = [
+    "--tx-lat",
+    "40.4233",
+    "--tx-lon",
+    "-3.6714",
+    "--rx-lat",
+    "40.4169",
+    "--rx-lon",
+    "-3.7035",
+]
+BASIC = ["--band", "n78", "--tx-power", "43", "--sensitivity", "-95"]
+
+
+def test_link_with_coordinates(capsys):
+    code, out, _ = run(capsys, "link", *BASIC, *MADRID)
+    assert code == 0
+    assert "40.42330°N, 3.67140°W" in out
+    assert "2.81 km" in out
+    assert "1st Fresnel radius" in out
+    assert "Earth bulge" in out
+
+
+def test_link_writes_map(capsys, tmp_path):
+    output = tmp_path / "maps" / "madrid.html"
+    code, out, err = run(capsys, "link", *BASIC, *MADRID, "--map", str(output))
+    assert code == 0, err
+    assert output.exists()
+    assert f"Map saved to {output}" in out
+    assert "LINK OK" in output.read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    ("extra", "message"),
+    [
+        (MADRID[:6], "--rx-lon"),
+        ([*MADRID, "--distance", "3"], "not both"),
+        (["--tx-lat", "48.8566", "--tx-lon", "2.3522", *MADRID[4:]], "outside Spain"),
+        (["--tx-lat", "40.4233", "--tx-lon", "3.6714", *MADRID[4:]], "west is negative"),
+        (["--tx-lat", "95", "--tx-lon", "-3.6", *MADRID[4:]], "Latitude"),
+        ([*MADRID[:4], "--rx-lat", "40.4233", "--rx-lon", "-3.6714"], "different locations"),
+        (["--distance", "3", "--map", "x.html"], "needs the coordinates"),
+        ([*MADRID, "--map", "map.png"], ".html"),
+    ],
+)
+def test_coordinate_errors(capsys, extra, message):
+    code, out, err = run(capsys, "link", *BASIC, *extra)
+    assert code == 2
+    assert message in err
+    assert out == ""
