@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "radiocoverage"
-version = "0.4.0"
-description = "Radio coverage visualizer for LTE/5G in Spain: link budget, propagation models and coverage maps."
+version = "1.0.0"
+description = "Radio coverage visualizer for LTE/5G in Spain: link budget, propagation models, real terrain and coverage maps."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
@@ -19,6 +19,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=7", "ruff>=0.4"]
+web = ["streamlit>=1.30"]
 
 [project.scripts]
 radiocoverage = "radiocoverage.cli:main"
