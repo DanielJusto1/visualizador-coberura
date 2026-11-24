@@ -21,6 +21,19 @@ of the ITU-R, COST-231 and 3GPP.
 | **5G NR n78 network in central Madrid (3GPP urban model)** | **Terrain profile of a 22 km link** |
 | ![Madrid 5G](docs/images/coverage_madrid_n78.png) | ![Terrain profile](docs/images/profile_navacerrada_segovia.png) |
 
+## ▶️ Run it in three steps / Ejecútalo en tres pasos
+
+1. Install **Python 3.11 or newer** from [python.org](https://www.python.org/downloads/)
+   (on Windows tick **"Add python.exe to PATH"**).
+2. Download this project: green **Code** button → **Download ZIP**, and unzip it.
+3. Double-click **`ejecutar_windows.bat`** (Windows) or run **`./ejecutar_mac_linux.sh`**
+   (macOS/Linux). The first time it installs what it needs (a few minutes); then the app
+   opens in your browser at <http://localhost:8501>.
+
+> **ES:** instala Python desde python.org (marcando *Add python.exe to PATH*), descarga
+> el proyecto con **Code → Download ZIP**, descomprímelo y haz doble clic en
+> `ejecutar_windows.bat`. Se abrirá la aplicación en el navegador.
+
 ## Features
 
 - **Link budget**: EIRP, path loss, received power, receiver sensitivity from thermal
@@ -57,6 +70,8 @@ pip install -e ".[dev,web]"
 ```bash
 streamlit run app/streamlit_app.py
 ```
+
+(or simply use the `ejecutar_windows.bat` / `ejecutar_mac_linux.sh` launchers above)
 
 Pick a site on the map of Spain, a band and the antenna parameters, and get the coverage
 map, the link budget and the terrain profile in the browser.

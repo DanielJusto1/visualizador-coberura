@@ -1,0 +1,6 @@
+# Streamlit settings for this app (read when it is started from the project folder).
+[server]
+showEmailPrompt = false
+
+[browser]
+gatherUsageStats = false

@@ -15,6 +15,46 @@ Para responderlas usa los mismos modelos que se estudian en la carrera y que emp
 herramientas profesionales: espacio libre, Okumura-Hata, COST-231, 3GPP TR 38.901 y la
 difracción de la ITU-R P.526, con el relieve real de España.
 
+## Cómo ejecutarlo
+
+### En tu ordenador (Windows)
+
+1. **Instala Python** (solo la primera vez): entra en <https://www.python.org/downloads/>,
+   descarga la última versión y, al instalar, **marca la casilla "Add python.exe to
+   PATH"** antes de pulsar *Install Now*.
+2. **Descarga el proyecto**: en la página del repositorio en GitHub pulsa el botón verde
+   **Code → Download ZIP** y descomprime el archivo (botón derecho → *Extraer todo*).
+3. **Haz doble clic en `ejecutar_windows.bat`**, dentro de la carpeta descomprimida.
+   - La primera vez instala lo necesario y tarda unos minutos.
+   - Después se abre solo el navegador con la aplicación (dirección
+     <http://localhost:8501>).
+   - Las siguientes veces arranca en segundos.
+   - Para cerrarla, cierra la ventana negra.
+
+Si Windows muestra el aviso "Windows protegió su PC", pulsa **Más información →
+Ejecutar de todas formas** (sale con cualquier archivo descargado de Internet).
+
+En macOS o Linux el equivalente es abrir una terminal en la carpeta y escribir
+`./ejecutar_mac_linux.sh`.
+
+### Uso de la aplicación
+
+- Pestaña **Coverage map**: elige un lugar, la banda, la potencia y la orientación de la
+  antena, y pulsa **Compute coverage**. Activa **Real terrain** para usar el relieve.
+  Puedes descargar el resultado para Google Earth con **Download KMZ**.
+- Pestaña **Point-to-point link**: elige transmisor y receptor y pulsa
+  **Compute link**. Con **Real terrain** verás además el perfil del terreno.
+
+### Desde la línea de comandos (opcional)
+
+Con la terminal de VS Code abierta en la carpeta del proyecto:
+
+```
+.venv\Scripts\radiocoverage coverage --config examples\coverage_lte_b20_segovia.toml --map segovia.html
+```
+
+Genera `segovia.html`, que se abre con doble clic en el navegador.
+
 ## Cómo se construyó (las 5 fases)
 
 | Fase | Qué añade |
