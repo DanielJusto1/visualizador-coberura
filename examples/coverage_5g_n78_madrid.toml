@@ -1,0 +1,112 @@
+# 5G NR n78 (3.5 GHz) network in central Madrid: five rooftop sites with three
+# sectors each, about 1 km apart. Urban macro model from 3GPP TR 38.901 (terrain not needed in a city:
+# the statistical model already accounts for buildings).
+band = "n78"
+tx_power = 49.0        # dBm per sector
+tx_gain = 17.0         # dBi
+tx_height = 30.0       # m
+beamwidth = 65.0       # degrees
+
+rx_height = 1.5        # m
+rx_loss = 3.0          # dB, body loss
+margin = 6.0           # dB
+model = "auto"         # 3GPP UMa above 2 GHz
+environment = "urban"
+
+# 100 MHz channel, noise figure 7 dB, minimum SNR -3 dB
+bandwidth = 100.0
+noise_figure = 7.0
+snr = -3.0
+
+radius = 1.0           # km around the sites
+resolution = 25.0      # m
+
+[[sites]]
+name = "Sol S1"
+lat = 40.4169
+lon = -3.7035
+azimuth = 0
+
+[[sites]]
+name = "Sol S2"
+lat = 40.4169
+lon = -3.7035
+azimuth = 120
+
+[[sites]]
+name = "Sol S3"
+lat = 40.4169
+lon = -3.7035
+azimuth = 240
+
+[[sites]]
+name = "Cibeles S1"
+lat = 40.4193
+lon = -3.6931
+azimuth = 20
+
+[[sites]]
+name = "Cibeles S2"
+lat = 40.4193
+lon = -3.6931
+azimuth = 140
+
+[[sites]]
+name = "Cibeles S3"
+lat = 40.4193
+lon = -3.6931
+azimuth = 260
+
+[[sites]]
+name = "Lavapiés S1"
+lat = 40.4087
+lon = -3.7008
+azimuth = 40
+
+[[sites]]
+name = "Lavapiés S2"
+lat = 40.4087
+lon = -3.7008
+azimuth = 160
+
+[[sites]]
+name = "Lavapiés S3"
+lat = 40.4087
+lon = -3.7008
+azimuth = 280
+
+[[sites]]
+name = "Plaza de España S1"
+lat = 40.4237
+lon = -3.7122
+azimuth = 10
+
+[[sites]]
+name = "Plaza de España S2"
+lat = 40.4237
+lon = -3.7122
+azimuth = 130
+
+[[sites]]
+name = "Plaza de España S3"
+lat = 40.4237
+lon = -3.7122
+azimuth = 250
+
+[[sites]]
+name = "Atocha S1"
+lat = 40.4066
+lon = -3.6907
+azimuth = 30
+
+[[sites]]
+name = "Atocha S2"
+lat = 40.4066
+lon = -3.6907
+azimuth = 150
+
+[[sites]]
+name = "Atocha S3"
+lat = 40.4066
+lon = -3.6907
+azimuth = 270

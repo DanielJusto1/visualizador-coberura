@@ -1,0 +1,53 @@
+# LTE Band 20 (800 MHz) rural network around Segovia and the Sierra de Guadarrama,
+# over real terrain: the mountains cast radio shadows.
+band = "B20"
+tx_power = 46.0        # dBm per sector (40 W)
+tx_gain = 17.0         # dBi, sector antenna
+tx_loss = 2.0          # dB
+tx_height = 30.0       # m
+
+rx_height = 1.5        # m
+rx_loss = 3.0          # dB, body loss
+margin = 5.0           # dB
+model = "auto"         # Okumura-Hata below 1500 MHz
+environment = "rural"
+terrain = true
+
+# 10 MHz channel, noise figure 9 dB, minimum SNR -1 dB
+bandwidth = 10.0
+noise_figure = 9.0
+snr = -1.0
+
+radius = 15.0          # km around the sites
+resolution = 150.0     # m
+
+[[sites]]
+name = "Bola del Mundo S1"
+lat = 40.7930
+lon = -3.9620
+azimuth = 330
+
+[[sites]]
+name = "Bola del Mundo S2"
+lat = 40.7930
+lon = -3.9620
+azimuth = 90
+
+[[sites]]
+name = "Bola del Mundo S3"
+lat = 40.7930
+lon = -3.9620
+azimuth = 210
+
+[[sites]]
+name = "Segovia"       # omnidirectional (no azimuth), lower power
+lat = 40.9481
+lon = -4.1253
+tx_power = 43.0
+tx_gain = 11.0
+
+[[sites]]
+name = "La Granja"
+lat = 40.8986
+lon = -4.0036
+azimuth = 300
