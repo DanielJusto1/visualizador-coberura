@@ -9,9 +9,13 @@ rx_lon = -3.7035
 tx_power = 43.0        # dBm (20 W)
 tx_gain = 24.0         # dBi, massive MIMO beamforming gain
 tx_loss = 0.0          # dB, active antenna, no feeder
+tx_height = 30.0       # m
 rx_gain = 0.0          # dBi
 rx_loss = 3.0          # dB, body loss
 other_losses = 20.0    # dB, building penetration
 margin = 8.0           # dB
+
+model = "free-space"   # best case; try "3gpp" for the realistic urban model
+environment = "urban"
 
 sensitivity = -95.0    # dBm

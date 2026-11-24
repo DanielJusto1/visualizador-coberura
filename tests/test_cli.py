@@ -2,11 +2,24 @@ import subprocess
 import sys
 from pathlib import Path
 
+import numpy as np
 import pytest
 
+import radiocoverage.cli as cli
 from radiocoverage.cli import main
+from radiocoverage.terrain import SyntheticTerrain
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
+
+
+def gentle_hills(lats, lons):
+    return 700.0 + 80.0 * np.sin(lats * 300.0) * np.cos(lons * 300.0)
+
+
+@pytest.fixture(autouse=True)
+def offline_terrain(monkeypatch):
+    """Never download elevation tiles in tests: use synthetic hills instead."""
+    monkeypatch.setattr(cli, "_terrain_source", lambda options: SyntheticTerrain(gentle_hills))
 
 
 def run(capsys, *args):
@@ -86,15 +99,16 @@ def test_sensitivity_from_noise(capsys):
 
 @pytest.mark.parametrize("example", sorted(EXAMPLES.glob("*.toml")), ids=lambda p: p.name)
 def test_examples_run(capsys, example):
-    code, out, err = run(capsys, "link", "--config", str(example))
+    command = "coverage" if example.name.startswith("coverage") else "link"
+    code, out, err = run(capsys, command, "--config", str(example))
     assert code == 0, err
-    assert "Result:" in out
+    assert ("Result:" if command == "link" else "Covered area") in out
 
 
 def test_command_line_overrides_config(capsys):
     config = str(EXAMPLES / "lte_b20_navacerrada_segovia.toml")
     # A distance on the command line replaces the coordinates from the file.
-    _, out, _ = run(capsys, "link", "--config", config, "--distance", "1000")
+    _, out, _ = run(capsys, "link", "--config", config, "--distance", "1000", "--no-terrain")
     assert "1000.00 km" in out
     assert "Tx location" not in out
     assert "LINK FAILS" in out
@@ -236,3 +250,152 @@ def test_coordinate_errors(capsys, extra, message):
     assert code == 2
     assert message in err
     assert out == ""
+
+
+# --- Propagation models, terrain and coverage ----------------------------------------
+
+
+def test_models_command(capsys):
+    code, out, _ = run(capsys, "models")
+    assert code == 0
+    for name in ("free-space", "okumura-hata", "cost231-hata", "3gpp", "auto", "rural"):
+        assert name in out
+
+
+def test_link_with_empirical_model(capsys):
+    code, out, _ = run(
+        capsys, "link", "--band", "B20", "--distance", "5", "--tx-power", "46",
+        "--sensitivity", "-100", "--model", "auto", "--environment", "suburban",
+    )  # fmt: skip
+    assert code == 0
+    assert "Okumura-Hata" in out
+    assert "suburban" in out
+    assert "Max range with this model" in out
+    assert "free space is a best case" not in out
+
+
+def test_link_model_warnings_and_errors(capsys):
+    code, out, _ = run(
+        capsys, "link", "--band", "B20", "--distance", "40", "--tx-power", "46",
+        "--sensitivity", "-100", "--model", "okumura-hata",
+    )  # fmt: skip
+    assert code == 0 and "Warning: Okumura-Hata: distance 40 km" in out
+    code, _, err = run(
+        capsys, "link", "--band", "n78", "--distance", "1", "--tx-power", "46",
+        "--sensitivity", "-100", "--model", "okumura-hata",
+    )  # fmt: skip
+    assert code == 2 and "only valid" in err
+
+
+def test_link_with_terrain_profile_and_map(capsys, tmp_path):
+    code, out, err = run(
+        capsys, "link", *BASIC, *MADRID, "--terrain",
+        "--profile", str(tmp_path / "p.png"), "--map", str(tmp_path / "m.html"),
+    )  # fmt: skip
+    assert code == 0, err
+    assert "Diffraction loss" in out and "Min. Fresnel clearance" in out
+    assert (tmp_path / "p.png").read_bytes()[:4] == b"\x89PNG"
+    assert "data:image/png;base64" in (tmp_path / "m.html").read_text(encoding="utf-8")
+
+
+def test_profile_implies_terrain_and_needs_coordinates(capsys, tmp_path):
+    code, _, err = run(
+        capsys, "link", *BASIC, "--distance", "3", "--profile", str(tmp_path / "p.png")
+    )
+    assert code == 2 and "needs the coordinates" in err
+    code, _, err = run(capsys, "link", *BASIC, *MADRID, "--profile", str(tmp_path / "p.jpg"))
+    assert code == 2 and ".png" in err
+
+
+def test_single_site_coverage(capsys, tmp_path):
+    code, out, err = run(
+        capsys, "coverage", "--band", "B3", "--tx-lat", "37.3891", "--tx-lon", "-5.9845",
+        "--tx-power", "46", "--tx-gain", "17", "--azimuth", "120", "--sensitivity", "-100",
+        "--radius", "3", "--resolution", "200", "--terrain",
+        "--map", str(tmp_path / "c.html"), "--kmz", str(tmp_path / "c.kmz"),
+        "--image", str(tmp_path / "c.png"),
+    )  # fmt: skip
+    assert code == 0, err
+    assert "COST-231 Hata" in out
+    assert "sector 120°" in out
+    assert "real elevation" in out
+    for name in ("c.html", "c.kmz", "c.png"):
+        assert (tmp_path / name).exists()
+
+
+def test_network_config(capsys, tmp_path):
+    config = tmp_path / "net.toml"
+    config.write_text(
+        """
+band = "B20"
+tx_power = 46.0
+sensitivity = -100.0
+radius = 3.0
+resolution = 250.0
+
+[[sites]]
+name = "One"
+lat = 40.40
+lon = -3.70
+azimuth = 90
+
+[[sites]]
+name = "Two"
+lat = 40.42
+lon = -3.66
+band = "n78"
+tx_power = 49.0
+height = 25.0
+""",
+        encoding="utf-8",
+    )
+    code, out, err = run(capsys, "coverage", "--config", str(config), "--model", "auto")
+    assert code == 0, err
+    assert "Network coverage prediction" in out
+    assert "One (LTE B20, sector 90°, 30 m" in out
+    assert "Two (5G NR n78, omni, 25 m" in out
+    assert "Best server areas" in out
+
+
+@pytest.mark.parametrize(
+    ("toml", "extra", "message"),
+    [
+        ('band = "B20"\nsensitivity = -90.0\n[[sites]]\nlat = 40.4\nlon = -3.7\n', [],
+         "missing transmitter power"),
+        ('band = "B20"\ntx_power = 40.0\nsensitivity = -90.0\n[[sites]]\nlat = 40.4\n', [],
+         "needs 'lat' and 'lon'"),
+        ('tx_power = 40.0\nsensitivity = -90.0\n[[sites]]\nlat = 40.4\nlon = -3.7\n', [],
+         "missing frequency"),
+        ('band = "B20"\ntx_power = 40.0\nsensitivity = -90.0\n[[sites]]\nlat = 40.4\n'
+         'lon = -3.7\ncolour = "red"\n', [], "unknown key(s) in site 1"),
+        ('band = "B20"\ntx_power = 40.0\nsensitivity = -90.0\n[[sites]]\nlat = 40.4\n'
+         'lon = 3.7\n', [], "outside Spain"),
+        ('band = "B20"\ntx_power = 40.0\nsensitivity = -90.0\n[[sites]]\nlat = 40.4\n'
+         'lon = -3.7\n', ["--tx-lat", "40", "--tx-lon", "-3"], "not both"),
+        ('band = "B20"\ntx_power = 40.0\nsensitivity = -90.0\nsites = []\n', [], "empty"),
+        ('band = "B20"\ntx_power = 40.0\nsensitivity = -90.0\nterrain = "yes"\n', [],
+         "true or false"),
+        ('band = "B20"\ntx_power = 40.0\nsensitivity = -90.0\nmodel = "magic"\n'
+         'tx_lat = 40.4\ntx_lon = -3.7\n', [], "invalid model"),
+    ],
+)  # fmt: skip
+def test_coverage_config_errors(capsys, tmp_path, toml, extra, message):
+    config = tmp_path / "bad.toml"
+    config.write_text(toml, encoding="utf-8")
+    code, _, err = run(capsys, "coverage", "--config", str(config), *extra)
+    assert code == 2
+    assert message in err
+
+
+def test_coverage_needs_location_and_valid_outputs(capsys, tmp_path):
+    base = ["coverage", "--band", "B20", "--tx-power", "40", "--sensitivity", "-90"]
+    code, _, err = run(capsys, *base)
+    assert code == 2 and "missing site location" in err
+    code, _, err = run(
+        capsys, *base, "--tx-lat", "40.4", "--tx-lon", "-3.7", "--kmz", str(tmp_path / "x.zip")
+    )
+    assert code == 2 and "must end in .kmz" in err
+    code, _, err = run(
+        capsys, *base, "--tx-lat", "40.4", "--tx-lon", "-3.7", "--terrain-zoom", "11.5",
+    )  # fmt: skip
+    assert code == 2 and "whole number" in err

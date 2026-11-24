@@ -1,5 +1,6 @@
 """Interactive HTML map of a point-to-point link (Leaflet via folium)."""
 
+import base64
 from html import escape
 from pathlib import Path
 
@@ -8,6 +9,7 @@ import folium
 from radiocoverage.bands import Band
 from radiocoverage.link_budget import LinkBudgetResult
 from radiocoverage.path import LinkPath
+from radiocoverage.profile import TerrainProfile
 
 OK_COLOUR = "#1a9850"
 FAIL_COLOUR = "#d73027"
@@ -21,7 +23,7 @@ _IGN_WMTS = (
 _IGN_ATTRIBUTION = '&copy; <a href="https://www.ign.es">Instituto Geográfico Nacional de España</a>'
 
 
-def _add_base_layers(m: folium.Map) -> None:
+def add_base_layers(m: folium.Map) -> None:
     folium.TileLayer("OpenStreetMap", name="OpenStreetMap").add_to(m)
     folium.TileLayer(
         tiles=_IGN_WMTS.format(service="ign-base", layer="IGNBaseTodo", fmt="jpeg"),
@@ -39,13 +41,23 @@ def _add_base_layers(m: folium.Map) -> None:
     ).add_to(m)
 
 
-def _summary_rows(path: LinkPath, result: LinkBudgetResult) -> list[tuple[str, str]]:
+def _summary_rows(
+    path: LinkPath, result: LinkBudgetResult, profile: TerrainProfile | None
+) -> list[tuple[str, str]]:
     p = result.parameters
-    return [
+    rows = [
         ("Distance", f"{path.distance_km:.2f} km"),
         ("Azimuth Tx→Rx", f"{path.bearing_deg:.1f}°"),
         ("EIRP", f"{result.eirp_dbm:.1f} dBm"),
-        ("Free-space loss", f"{result.path_loss_db:.1f} dB"),
+        ("Model", result.model_label),
+        ("Path loss", f"{result.path_loss_db:.1f} dB"),
+    ]
+    if profile is not None:
+        rows += [
+            ("Terrain", profile.status.split(" (")[0]),
+            ("Diffraction loss", f"{profile.diffraction_loss_db:.1f} dB"),
+        ]
+    return rows + [
         ("Received power", f"{result.rx_power_dbm:.1f} dBm"),
         ("Sensitivity", f"{p.rx_sensitivity_dbm:.1f} dBm"),
         ("Margin", f"{result.margin_db:.1f} dB (required {p.required_margin_db:.1f})"),
@@ -54,9 +66,9 @@ def _summary_rows(path: LinkPath, result: LinkBudgetResult) -> list[tuple[str, s
     ]
 
 
-def _html_table(rows: list[tuple[str, str]]) -> str:
+def html_table(rows: list[tuple[str, str]]) -> str:
     cells = "".join(
-        f"<tr><td style='padding:1px 8px 1px 0;color:#555'>{escape(k)}</td>"
+        f"<tr><td style='padding:1px 8px 1px 0;color:#555;white-space:nowrap'>{escape(k)}</td>"
         f"<td style='padding:1px 0;text-align:right'><b>{escape(v)}</b></td></tr>"
         for k, v in rows
     )
@@ -64,7 +76,11 @@ def _html_table(rows: list[tuple[str, str]]) -> str:
 
 
 def build_link_map(
-    path: LinkPath, result: LinkBudgetResult, band: Band | None = None
+    path: LinkPath,
+    result: LinkBudgetResult,
+    band: Band | None = None,
+    profile: TerrainProfile | None = None,
+    profile_png: bytes | None = None,
 ) -> folium.Map:
     """Create a map with both ends of the link, the radio path and its Fresnel zone."""
     viable = result.is_viable
@@ -76,10 +92,10 @@ def build_link_map(
         title = f"{result.parameters.frequency_mhz:g} MHz"
 
     m = folium.Map(location=(path.midpoint.lat, path.midpoint.lon), tiles=None, control_scale=True)
-    _add_base_layers(m)
+    add_base_layers(m)
 
     p = result.parameters
-    tx_popup = _html_table(
+    tx_popup = html_table(
         [
             ("Transmitter", str(path.tx)),
             ("Tx power", f"{p.tx_power_dbm:.1f} dBm"),
@@ -88,7 +104,7 @@ def build_link_map(
             ("Point antenna to", f"{path.bearing_deg:.1f}°"),
         ]
     )
-    rx_popup = _html_table(
+    rx_popup = html_table(
         [
             ("Receiver", str(path.rx)),
             ("Received power", f"{result.rx_power_dbm:.1f} dBm"),
@@ -130,14 +146,23 @@ def build_link_map(
     panel = (
         "<div style='position:fixed;top:12px;left:56px;z-index:1000;background:white;"
         "padding:10px 12px;border-radius:6px;box-shadow:0 1px 5px rgba(0,0,0,.4);"
-        "font-family:Arial,sans-serif;max-width:340px'>"
+        "font-family:Arial,sans-serif;max-width:400px'>"
         f"<div style='font-size:14px;font-weight:bold;margin-bottom:2px'>{escape(title)}</div>"
         f"<div style='color:{colour};font-weight:bold;margin-bottom:6px'>{verdict}</div>"
-        f"{_html_table(_summary_rows(path, result))}"
-        "<div style='font-size:10px;color:#777;margin-top:6px'>"
-        "Free-space model: best case, no terrain or clutter.</div></div>"
+        f"{html_table(_summary_rows(path, result, profile))}</div>"
     )
     m.get_root().html.add_child(folium.Element(panel))
+    if profile_png is not None:
+        encoded = base64.b64encode(profile_png).decode("ascii")
+        m.get_root().html.add_child(
+            folium.Element(
+                "<div style='position:fixed;bottom:24px;right:12px;z-index:1000;"
+                "background:white;padding:4px;border-radius:6px;"
+                "box-shadow:0 1px 5px rgba(0,0,0,.4)'>"
+                f"<img src='data:image/png;base64,{encoded}' style='width:min(560px,90vw)' "
+                "alt='Terrain profile'></div>"
+            )
+        )
 
     folium.LayerControl(collapsed=True).add_to(m)
     m.fit_bounds(
@@ -145,18 +170,24 @@ def build_link_map(
             (min(path.tx.lat, path.rx.lat), min(path.tx.lon, path.rx.lon)),
             (max(path.tx.lat, path.rx.lat), max(path.tx.lon, path.rx.lon)),
         ],
-        padding=(60, 60),
+        padding_top_left=(420, 40),
+        padding_bottom_right=(40, 280 if profile_png is not None else 40),
     )
     return m
 
 
 def save_link_map(
-    path: LinkPath, result: LinkBudgetResult, output: Path, band: Band | None = None
+    path: LinkPath,
+    result: LinkBudgetResult,
+    output: Path,
+    band: Band | None = None,
+    profile: TerrainProfile | None = None,
+    profile_png: bytes | None = None,
 ) -> Path:
     """Build the map and write it as a standalone HTML file."""
     output = Path(output)
     if output.suffix.lower() not in {".html", ".htm"}:
         raise ValueError(f"Map file must end in .html, got '{output.name}'")
     output.parent.mkdir(parents=True, exist_ok=True)
-    build_link_map(path, result, band).save(str(output))
+    build_link_map(path, result, band, profile, profile_png).save(str(output))
     return output

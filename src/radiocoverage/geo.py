@@ -7,6 +7,8 @@ the WGS84 ellipsoid, far better than the uncertainty of any propagation model.
 import math
 from dataclasses import dataclass
 
+import numpy as np
+
 EARTH_RADIUS_KM = 6371.0088
 """Mean Earth radius (IUGG), in km."""
 
@@ -90,3 +92,27 @@ def intermediate_point(a: GeoPoint, b: GeoPoint, fraction: float) -> GeoPoint:
     if total_km == 0.0:
         return a
     return destination_point(a, bearing_deg(a, b), total_km * fraction)
+
+
+# --- Vectorised versions (numpy) for coverage grids -----------------------------------
+
+
+def distance_km_array(origin: GeoPoint, lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
+    """Great-circle distances from ``origin`` to arrays of latitudes and longitudes."""
+    lat1, lon1 = math.radians(origin.lat), math.radians(origin.lon)
+    lat2, lon2 = np.radians(lats), np.radians(lons)
+    h = (
+        np.sin((lat2 - lat1) / 2) ** 2
+        + math.cos(lat1) * np.cos(lat2) * np.sin((lon2 - lon1) / 2) ** 2
+    )
+    return 2 * EARTH_RADIUS_KM * np.arcsin(np.minimum(1.0, np.sqrt(h)))
+
+
+def bearing_deg_array(origin: GeoPoint, lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
+    """Initial bearings from ``origin`` to arrays of points, 0-360°."""
+    lat1, lon1 = math.radians(origin.lat), math.radians(origin.lon)
+    lat2, lon2 = np.radians(lats), np.radians(lons)
+    dlon = lon2 - lon1
+    x = np.sin(dlon) * np.cos(lat2)
+    y = math.cos(lat1) * np.sin(lat2) - math.sin(lat1) * np.cos(lat2) * np.cos(dlon)
+    return np.degrees(np.arctan2(x, y)) % 360.0
