@@ -1,0 +1,12 @@
+# 5G NR n78 (3.5 GHz) urban small cell to a smartphone inside a building.
+band = "n78"
+distance = 0.5         # km
+tx_power = 43.0        # dBm (20 W)
+tx_gain = 24.0         # dBi, massive MIMO beamforming gain
+tx_loss = 0.0          # dB, active antenna, no feeder
+rx_gain = 0.0          # dBi
+rx_loss = 3.0          # dB, body loss
+other_losses = 20.0    # dB, building penetration
+margin = 8.0           # dB
+
+sensitivity = -95.0    # dBm

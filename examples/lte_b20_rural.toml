@@ -1,0 +1,16 @@
+# LTE Band 20 (800 MHz) macro cell to a smartphone in a rural area.
+band = "B20"
+distance = 10.0        # km
+tx_power = 46.0        # dBm (40 W per sector)
+tx_gain = 17.0         # dBi, sector antenna
+tx_loss = 2.0          # dB, feeder and connectors
+rx_gain = 0.0          # dBi, smartphone
+rx_loss = 3.0          # dB, body loss
+other_losses = 0.0     # dB
+margin = 10.0          # dB, fade margin
+
+# Sensitivity derived from thermal noise: 10 MHz channel, UE noise figure 9 dB,
+# minimum SNR -1 dB (QPSK with low code rate).
+bandwidth = 10.0
+noise_figure = 9.0
+snr = -1.0
