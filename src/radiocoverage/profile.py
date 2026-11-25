@@ -206,6 +206,15 @@ class TerrainProfile:
         return self.min_clearance_ratio >= CLEARANCE_RATIO
 
     @property
+    def status_key(self) -> str:
+        """``clear``, ``partial`` or ``blocked`` (for translated labels)."""
+        if self.fresnel_clear:
+            return "clear"
+        if self.has_line_of_sight:
+            return "partial"
+        return "blocked"
+
+    @property
     def status(self) -> str:
         if self.fresnel_clear:
             return "clear (>= 60% of 1st Fresnel zone free)"
