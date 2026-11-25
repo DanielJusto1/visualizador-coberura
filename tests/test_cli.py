@@ -399,3 +399,22 @@ def test_coverage_needs_location_and_valid_outputs(capsys, tmp_path):
         capsys, *base, "--tx-lat", "40.4", "--tx-lon", "-3.7", "--terrain-zoom", "11.5",
     )  # fmt: skip
     assert code == 2 and "whole number" in err
+
+
+def test_web_command_line():
+    command = cli.web_command(8600)
+    assert command[1:4] == ["-m", "streamlit", "run"]
+    assert command[4].endswith("streamlit_entry.py") and Path(command[4]).exists()
+    assert "--server.port=8600" in command
+    assert "--theme.primaryColor=#1f4fd1" in command
+
+
+def test_web_command_without_streamlit(capsys, monkeypatch):
+    import importlib.util
+
+    real = importlib.util.find_spec
+    monkeypatch.setattr(
+        importlib.util, "find_spec", lambda name: None if name == "streamlit" else real(name)
+    )
+    code, _, err = run(capsys, "web")
+    assert code == 2 and "pip install" in err

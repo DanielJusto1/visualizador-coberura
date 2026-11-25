@@ -36,13 +36,13 @@ def hex_to_rgb(colour: str) -> tuple[int, int, int]:
     return tuple(int(colour[i : i + 2], 16) for i in (0, 2, 4))
 
 
-def class_ranges_dbm(sensitivity_dbm: float) -> list[tuple[SignalClass, str]]:
-    """Legend text for every signal class, in dBm."""
+def class_ranges_dbm(sensitivity_dbm: float, to: str = "to") -> list[tuple[SignalClass, str]]:
+    """Legend text for every signal class, in dBm (``to`` joins the two ends of a range)."""
     out = []
     upper = None
     for signal_class in SIGNAL_CLASSES:
         lower = sensitivity_dbm + signal_class.margin_db
-        text = f"≥ {lower:.0f} dBm" if upper is None else f"{lower:.0f} to {upper:.0f} dBm"
+        text = f"≥ {lower:.0f} dBm" if upper is None else f"{lower:.0f} {to} {upper:.0f} dBm"
         out.append((signal_class, text))
         upper = lower
     return out

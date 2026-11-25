@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "radiocoverage"
-version = "1.0.0"
+version = "1.1.0"
 description = "Radio coverage visualizer for LTE/5G in Spain: link budget, propagation models, real terrain and coverage maps."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -19,13 +19,16 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=7", "ruff>=0.4"]
-web = ["streamlit>=1.30"]
+web = ["streamlit>=1.50", "streamlit-folium>=0.25"]
 
 [project.scripts]
 radiocoverage = "radiocoverage.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+radiocoverage = ["webapp/assets/*.svg"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

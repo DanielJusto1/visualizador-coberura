@@ -241,20 +241,36 @@ class PropagationModel:
     function: Callable[..., Distance]
     reference: str
 
+    def validity_issues(
+        self, distance_km: float, tx_height_m: float, rx_height_m: float
+    ) -> list[tuple[str, float, float, float, str]]:
+        """``(quantity, value, low, high, unit)`` for every value outside the validity range.
+
+        ``quantity`` is ``distance``, ``tx_height`` or ``rx_height``.
+        """
+        checks = (
+            ("distance", distance_km, self.distance_range_km, "km"),
+            ("tx_height", tx_height_m, self.tx_height_range_m, "m"),
+            ("rx_height", rx_height_m, self.rx_height_range_m, "m"),
+        )
+        return [
+            (name, value, low, high, unit)
+            for name, value, (low, high), unit in checks
+            if not low <= value <= high
+        ]
+
     def validity_warnings(
         self, distance_km: float, tx_height_m: float, rx_height_m: float
     ) -> list[str]:
         """Human readable notes when a link is outside the model's validity range."""
-        checks = (
-            ("distance", distance_km, self.distance_range_km, "km"),
-            ("base station height", tx_height_m, self.tx_height_range_m, "m"),
-            ("receiver height", rx_height_m, self.rx_height_range_m, "m"),
-        )
+        names = {"distance": "distance", "tx_height": "base station height",
+                 "rx_height": "receiver height"}  # fmt: skip
         return [
-            f"{self.label}: {name} {value:.4g} {unit} is outside the validity range "
+            f"{self.label}: {names[name]} {value:.4g} {unit} is outside the validity range "
             f"{low:g}-{high:g} {unit}"
-            for name, value, (low, high), unit in checks
-            if not low <= value <= high
+            for name, value, low, high, unit in self.validity_issues(
+                distance_km, tx_height_m, rx_height_m
+            )
         ]
 
 
