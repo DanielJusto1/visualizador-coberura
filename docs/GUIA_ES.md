@@ -39,11 +39,31 @@ En macOS o Linux el equivalente es abrir una terminal en la carpeta y escribir
 
 ### Uso de la aplicación
 
-- Pestaña **Coverage map**: elige un lugar, la banda, la potencia y la orientación de la
-  antena, y pulsa **Compute coverage**. Activa **Real terrain** para usar el relieve.
-  Puedes descargar el resultado para Google Earth con **Download KMZ**.
-- Pestaña **Point-to-point link**: elige transmisor y receptor y pulsa
-  **Compute link**. Con **Real terrain** verás además el perfil del terreno.
+La aplicación está en **español** y en **inglés** (selector en la barra lateral) y tiene
+cuatro páginas:
+
+- **Planificador en mapa** (la página inicial):
+  1. Haz clic en el mapa donde quieras el **transmisor** (la antena).
+  2. Haz otro clic donde esté el **receptor** (el móvil). Puedes seguir haciendo clic
+     para moverlo; con el selector *Siguiente clic coloca* eliges qué extremo mueves.
+  3. A la derecha aparecen el veredicto (viable / no viable), las cifras clave y las
+     pestañas *Presupuesto*, *Perfil del terreno*, *Potencia vs distancia* y *Exportar*.
+  - Con **Ir a** saltas a una ciudad o montaña; **Encuadrar** centra el enlace;
+    **Invertir** intercambia transmisor y receptor; **Borrar** empieza de nuevo.
+  - En **Cobertura del transmisor** calculas la zona que cubre la antena colocada.
+  - En **Coordenadas exactas** puedes escribir la posición con decimales.
+- **Red y cobertura**: haz clic en el mapa para añadir emplazamientos (o carga una red
+  de ejemplo), edítalos en la tabla (banda, potencia, azimut…) y pulsa **Calcular
+  cobertura**. Puedes ver la potencia recibida o el **mejor servidor** y descargar el
+  resultado para Google Earth (KMZ), como mapa (HTML) o como imagen (PNG).
+- **Enlace por coordenadas**: el mismo análisis que el planificador, escribiendo las
+  coordenadas o eligiendo lugares de una lista.
+- **Metodología**: fórmulas, modelos, bandas y limitaciones, por si te preguntan.
+
+En la **barra lateral** están los parámetros: banda (al cambiarla se cargan valores
+típicos), potencia, ganancia y altura de la antena, dónde está el usuario (exterior,
+vehículo o interior), sensibilidad del receptor, margen, modelo de propagación y la
+opción **Usar el relieve real**. Cada campo tiene un **?** con una explicación.
 
 ### Desde la línea de comandos (opcional)
 
@@ -64,6 +84,7 @@ Genera `segovia.html`, que se abre con doble clic en el navegador.
 | 3 | Modelos de propagación realistas y mapa de cobertura con antenas sectoriales |
 | 4 | Relieve real: perfil del terreno, visibilidad, despejamiento de Fresnel y difracción |
 | 5 | Redes con varias antenas, mapa de mejor servidor, exportación a Google Earth y web |
+| + | Aplicación web profesional y bilingüe: colocar antenas con clic en el mapa, tabla de emplazamientos editable y gráficos interactivos |
 
 ## Conceptos clave (para defenderlo)
 
@@ -116,8 +137,9 @@ Genera `segovia.html`, que se abre con doble clic en el navegador.
 
 > **Visualizador de cobertura radio LTE/5G (Python).** Herramienta de planificación que
 > calcula presupuestos de enlace y mapas de cobertura en España con modelos Okumura-Hata,
-> COST-231 y 3GPP TR 38.901, relieve real y difracción ITU-R P.526. Mapas interactivos,
-> exportación a Google Earth, aplicación web y más de 220 tests automáticos.
+> COST-231 y 3GPP TR 38.901, relieve real y difracción ITU-R P.526. Aplicación web
+> bilingüe en la que las antenas se colocan con un clic en el mapa, exportación a
+> Google Earth y más de 500 tests automáticos.
 
 ## Preguntas que te pueden hacer
 

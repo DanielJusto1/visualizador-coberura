@@ -13,7 +13,21 @@ of the ITU-R, COST-231 and 3GPP.
 > cobertura de estaciones base LTE y 5G en España: presupuesto de enlace, modelos de
 > propagación (Okumura-Hata, COST-231, 3GPP TR 38.901), relieve real con difracción
 > (ITU-R P.526), mapas de cobertura y de mejor servidor, exportación a Google Earth y
-> una aplicación web. Guía en español: [docs/GUIA_ES.md](docs/GUIA_ES.md).
+> una **aplicación web bilingüe** en la que el transmisor y el receptor se colocan
+> **haciendo clic en el mapa**. Guía en español: [docs/GUIA_ES.md](docs/GUIA_ES.md).
+
+### Web app
+
+![Map planner: click to place transmitter and receiver](docs/images/app_planner.jpg)
+
+| Network page: best server over shaded relief | 5G n78 network in central Madrid (English UI) |
+|---|---|
+| ![Network page](docs/images/app_network.jpg) | ![Madrid 5G](docs/images/app_madrid.jpg) |
+
+<sub>Screenshots taken without the background map tiles loaded; in the app the coverage
+is drawn over the chosen base map (light grey, OpenStreetMap, topographic or IGN).</sub>
+
+### Command line outputs
 
 | Coverage of an LTE 800 MHz network over real terrain | Best server of each point |
 |---|---|
@@ -36,6 +50,20 @@ of the ITU-R, COST-231 and 3GPP.
 
 ## Features
 
+**Web application** (Streamlit, Spanish and English)
+- **Map planner**: click on the map to place the transmitter, click again to place the
+  receiver, and the link budget is computed instantly. Swap ends, fit the view, jump to
+  well-known places, fine-tune exact coordinates and compute the transmitter's coverage.
+- **Network coverage**: add sites by clicking on the map or load an example network,
+  edit them in a table (band, power, gain, height, azimuth, beamwidth), and get the
+  received power and **best-server** maps over shaded relief, with KMZ/HTML/PNG export.
+- **Link by coordinates**: the same analysis from typed coordinates or a list of places.
+- **Interactive charts**: terrain profile with line of sight and Fresnel zone, and received
+  power against distance compared with free space.
+- Typical values are loaded when the band changes, every parameter has a help tooltip,
+  and the methodology page explains the formulas and models.
+
+**Radio engine**
 - **Link budget**: EIRP, path loss, received power, receiver sensitivity from thermal
   noise (kTB + NF + SNR), fade margin and maximum range.
 - **Spanish LTE/5G bands** built in: n28 (700 MHz), B20 (800), B8 (900), B3 (1800),
@@ -48,10 +76,12 @@ of the ITU-R, COST-231 and 3GPP.
   (k = 4/3) and **Bullington knife-edge diffraction** (ITU-R P.526).
 - **Coverage maps** over a grid with **sector antenna patterns** (3GPP TR 36.814),
   several sites, **best-server** analysis and covered-area statistics.
-- **Outputs**: interactive HTML maps (OpenStreetMap and IGN base maps / aerial imagery),
-  **KMZ for Google Earth**, PNG images over shaded relief and terrain profile charts.
-- **Web app** (Streamlit) and **command line** interface with TOML configuration files.
-- **220+ automated tests** run on every push with GitHub Actions (Python 3.11–3.13).
+- **Outputs**: interactive HTML maps (light grey, OpenStreetMap, topographic and IGN base
+  maps / aerial imagery, full-screen and cursor coordinates), **KMZ for Google Earth**,
+  PNG images over shaded relief and terrain profile charts.
+- **Command line** interface with TOML configuration files.
+- **500+ automated tests** (including headless runs of every web page) on every push
+  with GitHub Actions (Python 3.11–3.13).
 
 ## Quick start
 
@@ -68,13 +98,13 @@ pip install -e ".[dev,web]"
 ### Web app
 
 ```bash
-streamlit run app/streamlit_app.py
+radiocoverage web
 ```
 
-(or simply use the `ejecutar_windows.bat` / `ejecutar_mac_linux.sh` launchers above)
-
-Pick a site on the map of Spain, a band and the antenna parameters, and get the coverage
-map, the link budget and the terrain profile in the browser.
+(or `streamlit run app/streamlit_app.py`, or simply the `ejecutar_windows.bat` /
+`ejecutar_mac_linux.sh` launchers above). The app has four pages: **Map planner**,
+**Network coverage**, **Link by coordinates** and **Methodology**; the language switch
+is in the sidebar.
 
 ### Command line
 
@@ -173,8 +203,20 @@ src/radiocoverage/
     coverage_map.py   interactive coverage map
     coverage_plot.py  static coverage image over shaded relief
     kmz.py            Google Earth export
+    mapstyle.py       base maps, map controls, panels and shaded relief
+    i18n.py           Spanish / English texts
     cli.py            command line interface
-app/streamlit_app.py  web interface
+    webapp/           web interface (Streamlit)
+        main.py           page setup, sidebar, language switch and navigation
+        pages/            planner, network, link and methodology pages
+        placement.py      click-to-place logic for transmitter and receiver
+        sites_table.py    editable table of network sites
+        widgets.py        parameter controls with typical values per band
+        results.py        verdict, metrics, budget table, charts and downloads
+        charts.py         interactive Altair charts
+        compute.py        cached computations
+        texts.py          interface texts in both languages
+app/streamlit_app.py  entry point for Streamlit (local and Streamlit Cloud)
 examples/             ready-to-run configurations with real Spanish locations
 tests/                automated tests (pytest)
 docs/                 Spanish guide and images

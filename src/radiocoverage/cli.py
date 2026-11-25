@@ -193,6 +193,8 @@ def _build_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("bands", help="list the LTE/5G bands available in Spain")
     subparsers.add_parser("models", help="list the propagation models")
+    web = subparsers.add_parser("web", help="open the web interface in the browser")
+    web.add_argument("--port", type=int, default=8501, help="local port (default: 8501)")
     return parser
 
 
@@ -702,7 +704,7 @@ def _run_coverage(args: argparse.Namespace) -> list[str]:
     if args.map is not None:
         from radiocoverage.coverage_map import save_coverage_map
 
-        lines.append(f"Map saved to {save_coverage_map(result, args.map)}")
+        lines.append(f"Map saved to {save_coverage_map(result, args.map, terrain)}")
     if args.kmz is not None:
         from radiocoverage.kmz import save_kmz
 
@@ -715,6 +717,50 @@ def _run_coverage(args: argparse.Namespace) -> list[str]:
     return lines
 
 
+# Theme of the web interface, also passed on the command line so that it applies
+# whatever folder the app is started from (see .streamlit/config.toml).
+WEB_OPTIONS = {
+    "server.showEmailPrompt": "false",
+    "browser.gatherUsageStats": "false",
+    "client.toolbarMode": "minimal",
+    "theme.base": "light",
+    "theme.primaryColor": "#1f4fd1",
+    "theme.backgroundColor": "#ffffff",
+    "theme.secondaryBackgroundColor": "#f4f6fb",
+    "theme.textColor": "#1b2430",
+}
+
+
+def web_command(port: int = 8501) -> list[str]:
+    """The command that starts the Streamlit web interface."""
+    import radiocoverage.webapp
+
+    entry = Path(radiocoverage.webapp.__file__).parent / "streamlit_entry.py"
+    options = [f"--{name}={value}" for name, value in WEB_OPTIONS.items()]
+    return [sys.executable, "-m", "streamlit", "run", str(entry), f"--server.port={port}",
+            *options]  # fmt: skip
+
+
+def run_web(port: int = 8501) -> int:
+    import importlib.util
+    import subprocess
+
+    if (
+        importlib.util.find_spec("streamlit") is None
+        or importlib.util.find_spec("streamlit_folium") is None
+    ):
+        print(
+            "error: the web interface needs extra packages; install them with\n"
+            '  pip install -e ".[web]"',
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        return subprocess.call(web_command(port))
+    except KeyboardInterrupt:  # pragma: no cover - user closes the app
+        return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -725,6 +771,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "models":
         print(format_models())
         return 0
+    if args.command == "web":
+        return run_web(args.port)
 
     try:
         lines = _run_link(args) if args.command == "link" else _run_coverage(args)
